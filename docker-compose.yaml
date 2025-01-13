@@ -1,0 +1,84 @@
+services:
+  fastapi:
+    build: .
+    env_file:
+      - ./.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - 8000:80
+    volumes:
+      - .:/app
+    environment:
+      PYTHONUNBUFFERED: 1
+
+  postgres:
+    image: postgres:latest
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+  test_db:
+    image: postgres:latest
+    env_file:
+      - ./test.env
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U test_user -d test_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5433:5432
+    networks:
+      - test-network
+    restart: unless-stopped
+
+  tests:
+    build: .
+    env_file:
+      - test.env
+    environment:
+      PYTHONUNBUFFERED: 1
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_NAME: test_db
+      DB_HOST: test_db
+      DB_PORT: 5432
+    depends_on:
+      test_db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 3 &&
+        pytest"
+    networks:
+      - test-network
+
+volumes:
+  postgres_data:
+
+networks:
+  test-network:
+    driver: bridge
