@@ -50,6 +50,8 @@ services:
       retries: 5
     ports:
       - 5433:5432
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - test-network
     restart: unless-stopped
@@ -58,6 +60,8 @@ services:
     build: .
     env_file:
       - test.env
+    ports:
+      - 8000:80
     environment:
       PYTHONUNBUFFERED: 1
       DB_USER: test_user

@@ -1,7 +1,9 @@
+import uuid
 from decimal import Decimal
 from enum import Enum
 
-from fastapi import APIRouter, HTTPException, Depends, Response, status
+from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +27,16 @@ class WalletOperation(BaseModel):
     """
     operation: Operation
     amount: condecimal(gt=0)
+
+
+class WalletUUIDResponse(BaseModel):
+    """
+    Модель кошелька
+    """
+    id_: uuid.UUID
+
+    def __str__(self):
+        return str(self.id_)
 
 
 async def get_wallet_balance(wallet_uuid: str, session: AsyncSession) -> int:
@@ -99,7 +111,7 @@ async def create_wallet(get_session=Depends(get_async_session)):
 
         await session.commit()
 
-    return {"wallet_uuid": wallet_uuid}, status.HTTP_201_CREATED
+    return JSONResponse({"wallet_uuid": str(wallet_uuid)}, status.HTTP_201_CREATED)
 
 
 @wallet_router.get("/{wallet_uuid}")
@@ -115,12 +127,12 @@ async def get_wallet(wallet_uuid: str, get_session=Depends(get_async_session)):
             balance = await get_wallet_balance(wallet_uuid, session)
 
         except wallet_exceptions.WalletNotFoundError:
-            return HTTPException(status_code=404, detail="Wallet not found")
+            raise HTTPException(status_code=404, detail="Wallet not found")
 
         except Exception as e:
-            return HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e))
 
-    return {"balance": balance}, status.HTTP_200_OK
+    return JSONResponse({"balance": balance}, status.HTTP_200_OK)
 
 
 @wallet_router.post("/{wallet_uuid}/operation")
@@ -144,7 +156,7 @@ async def update_wallet(
                 operation.amount,
                 session)
 
-            return {"status": "success", "balance": new_balance}, status.HTTP_200_OK
+            return JSONResponse({"status": "success", "balance": new_balance}, status.HTTP_200_OK)
 
         except wallet_exceptions.WalletNotFoundError:
             raise HTTPException(status_code=404, detail="Wallet not found")

@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv('.env')
 
+
 class Settings(BaseSettings):
     """
     Конфигурация приложения
