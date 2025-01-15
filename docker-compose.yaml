@@ -81,11 +81,6 @@ services:
     depends_on:
       test_db:
         condition: service_healthy
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 3 &&
-        pytest"
     networks:
       - test-network
 

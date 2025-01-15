@@ -14,7 +14,5 @@ RUN poetry install --no-root
 
 COPY . .
 
-#CMD ["bash"]
 RUN chmod +x ./entrypoint.sh
 ENTRYPOINT ["bash", "./entrypoint.sh"]
-#CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

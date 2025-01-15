@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
 
+    DB_POOL_SIZE: int = 500
+    DB_MAX_OVERFLOW: int = 500
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800
+
+
     # Загрузка переменных окружения из файла .env
     model_config = SettingsConfigDict(
         env_file='../../.env'
