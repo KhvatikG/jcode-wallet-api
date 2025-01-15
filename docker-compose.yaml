@@ -1,6 +1,10 @@
 services:
   fastapi:
     build: .
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
     env_file:
       - ./.env
     depends_on:
@@ -15,6 +19,10 @@ services:
 
   postgres:
     image: postgres:latest
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql.conf"
     env_file:
       - .env
     environment:
@@ -31,6 +39,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql.conf:/etc/postgresql.conf:ro
     restart: unless-stopped
     tty: true
     stdin_open: true

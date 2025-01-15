@@ -10,8 +10,8 @@ DATABASE_URL = settings.get_db_url
 
 engine = create_async_engine(
     DATABASE_URL,
-    pool_size=20,
-    max_overflow=30,
+    pool_size=500,
+    max_overflow=500,
     pool_timeout=30,
     pool_recycle=1800,
     pool_pre_ping=True,

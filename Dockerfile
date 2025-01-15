@@ -3,7 +3,7 @@ LABEL authors="Игорь"
 
 WORKDIR /app
 
-RUN apk --no-cache add curl bash
+RUN apk --no-cache add curl bash gcc python3-dev musl-dev linux-headers
 
 RUN curl -sSL https://install.python-poetry.org | python3
 ENV PATH="/root/.local/bin:$PATH"
