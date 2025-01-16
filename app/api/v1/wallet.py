@@ -1,42 +1,18 @@
-import uuid
 from decimal import Decimal
-from enum import Enum
+
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from pydantic import BaseModel, condecimal
 
+from app.api.v1.models import Operation, WalletOperation, OperationResponse, WalletBalanceResponse
 from app.db.models import Wallet
 from app.db.database import get_async_session
 from app.exceptions import wallet_exceptions
 
 wallet_router = APIRouter(prefix="/api/v1/wallets", tags=["wallets"])
-
-
-class Operation(str, Enum):
-    DEPOSIT = "DEPOSIT"
-    WITHDRAW = "WITHDRAW"
-
-
-class WalletOperation(BaseModel):
-    """
-    Операция с кошельком
-    """
-    operation: Operation
-    amount: condecimal(gt=0)
-
-
-class WalletUUIDResponse(BaseModel):
-    """
-    Модель кошелька
-    """
-    id_: uuid.UUID
-
-    def __str__(self):
-        return str(self.id_)
 
 
 async def get_wallet_balance(wallet_uuid: str, session: AsyncSession) -> int:
@@ -114,7 +90,7 @@ async def create_wallet(session: AsyncSession = Depends(get_async_session)):
     return JSONResponse({"wallet_uuid": str(wallet_uuid)}, status.HTTP_201_CREATED)
 
 
-@wallet_router.get("/{wallet_uuid}")
+@wallet_router.get("/{wallet_uuid}", response_model=WalletBalanceResponse)
 async def get_wallet(wallet_uuid: str, session: AsyncSession = Depends(get_async_session)):
     """
     Получение баланса кошелька
@@ -134,7 +110,7 @@ async def get_wallet(wallet_uuid: str, session: AsyncSession = Depends(get_async
     return JSONResponse({"balance": balance}, status.HTTP_200_OK)
 
 
-@wallet_router.post("/{wallet_uuid}/operation")
+@wallet_router.post("/{wallet_uuid}/operation", response_model=OperationResponse)
 async def update_wallet(
         wallet_uuid: str,
         operation: WalletOperation,
