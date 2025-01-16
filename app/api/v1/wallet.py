@@ -92,9 +92,10 @@ async def wallet_operation(wallet_uuid: str, operation: Operation, amount: Decim
 
 
 @wallet_router.post("/create_wallet", status_code=201)
-async def create_wallet(get_session=Depends(get_async_session)):
+async def create_wallet(session: AsyncSession = Depends(get_async_session)):
     """
     Создание кошелька
+    session: Сессия БД
     :return: UUID кошелька
     """
     stmt = text("""
@@ -102,35 +103,33 @@ async def create_wallet(get_session=Depends(get_async_session)):
         VALUES (uuid_generate_v4(), 0)
         RETURNING id
     """)
-    async with get_session as session:
-        result = await session.execute(stmt)
-        wallet_uuid = result.scalar_one_or_none()
+    result = await session.execute(stmt)
+    wallet_uuid = result.scalar_one_or_none()
 
-        if not wallet_uuid:
-            raise HTTPException(status_code=500, detail="Failed to create wallet.")
+    if not wallet_uuid:
+        raise HTTPException(status_code=500, detail="Failed to create wallet.")
 
-        await session.commit()
+    await session.commit()
 
     return JSONResponse({"wallet_uuid": str(wallet_uuid)}, status.HTTP_201_CREATED)
 
 
 @wallet_router.get("/{wallet_uuid}")
-async def get_wallet(wallet_uuid: str, get_session=Depends(get_async_session)):
+async def get_wallet(wallet_uuid: str, session: AsyncSession = Depends(get_async_session)):
     """
     Получение баланса кошелька
-    :param get_session: Контекст сессии БД
+    :param session: Сессия БД
     :param wallet_uuid: UUID Кошелька
     :return: Баланс кошелька
     """
-    async with get_session as session:
-        try:
-            balance = await get_wallet_balance(wallet_uuid, session)
+    try:
+        balance = await get_wallet_balance(wallet_uuid, session)
 
-        except wallet_exceptions.WalletNotFoundError:
-            raise HTTPException(status_code=404, detail="Wallet not found")
+    except wallet_exceptions.WalletNotFoundError:
+        raise HTTPException(status_code=404, detail="Wallet not found")
 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse({"balance": balance}, status.HTTP_200_OK)
 
@@ -139,30 +138,29 @@ async def get_wallet(wallet_uuid: str, get_session=Depends(get_async_session)):
 async def update_wallet(
         wallet_uuid: str,
         operation: WalletOperation,
-        get_session=Depends(get_async_session)
+        session: AsyncSession = Depends(get_async_session)
 ):
     """
     Обновление баланса кошелька
-    :param get_session: Контекст сессии БД
+    :param session: Сессия БД
     :param wallet_uuid: UUID Кошелька
     :param operation: Тип операции и сумма операции
     :return: Баланс кошелька
     """
-    async with get_session as session:
-        try:
-            new_balance = await wallet_operation(
-                wallet_uuid,
-                operation.operation,
-                operation.amount,
-                session)
+    try:
+        new_balance = await wallet_operation(
+            wallet_uuid,
+            operation.operation,
+            operation.amount,
+            session)
 
-            return JSONResponse({"status": "success", "balance": new_balance}, status.HTTP_200_OK)
+        return JSONResponse({"status": "success", "balance": new_balance}, status.HTTP_200_OK)
 
-        except wallet_exceptions.WalletNotFoundError:
-            raise HTTPException(status_code=404, detail="Wallet not found")
+    except wallet_exceptions.WalletNotFoundError:
+        raise HTTPException(status_code=404, detail="Wallet not found")
 
-        except wallet_exceptions.WalletBalanceError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+    except wallet_exceptions.WalletBalanceError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

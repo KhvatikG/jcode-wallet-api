@@ -1,6 +1,3 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
-
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from loguru import logger
 
@@ -26,8 +23,7 @@ async_session_maker = async_sessionmaker(
 )
 
 
-@asynccontextmanager
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncSession:
     """
     Асинхронный контекстный менеджер для работы с базой данных.
     """
