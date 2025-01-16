@@ -4,7 +4,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
+          cpus: '8'
     env_file:
       - ./.env
     depends_on:
@@ -16,6 +16,7 @@ services:
       - .:/app
     environment:
       PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
 
   postgres:
     image: postgres:latest
